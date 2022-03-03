@@ -1,14 +1,31 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 
+	"github.com/antonovegorv/orders-service/cache"
 	"github.com/antonovegorv/orders-service/config"
+	"github.com/antonovegorv/orders-service/internal/model"
 	"github.com/antonovegorv/orders-service/router"
 	"github.com/gofiber/fiber/v2"
+	"github.com/nats-io/stan.go"
 )
 
 func main() {
+	// Initialize the cache for the service to work.
+	cache.Init()
+
+	// Connect to the nats-streaming-server.
+	sc, err := stan.Connect(config.Get("NATS_CLUSTER_ID"), config.Get("NATS_CLIENT_ID"))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer sc.Close()
+
+	// Subscribe to the channel in order to start listening to messages.
+	sc.Subscribe(config.Get("NATS_SUBJECT"), messageHandler, stan.DurableName("processed"))
+
 	// Create an instance of the fiber application.
 	app := fiber.New()
 
@@ -22,4 +39,27 @@ func main() {
 
 	// Start the HTTP server to listen for incoming requests.
 	log.Fatal(app.Listen(config.Get("HTTP_PORT")))
+}
+
+// A handler for an incoming message from nats-streaming-server.
+func messageHandler(m *stan.Msg) {
+	// Create a variable to store order in.
+	var order model.Order
+
+	// Try to unmarshal data received by the nats.
+	if err := json.Unmarshal(m.Data, &order); err != nil {
+		log.Println("Unpredicted data has been received. Skipped.")
+		return
+	}
+
+	// Write new value to the Database.
+
+	// Set new value to cache.
+	if err := cache.Orders.Set(order.UUID.String(), order); err != nil {
+		// Log that we have an error in caching data.
+		log.Println(err) // Probably should to be Fatalln...
+	} else {
+		// Log that we have set new value to cache.
+		log.Printf("New order (%v) has been successfully cached!\n", order.UUID)
+	}
 }
