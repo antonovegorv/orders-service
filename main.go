@@ -6,6 +6,7 @@ import (
 
 	"github.com/antonovegorv/orders-service/cache"
 	"github.com/antonovegorv/orders-service/config"
+	"github.com/antonovegorv/orders-service/database"
 	"github.com/antonovegorv/orders-service/internal/model"
 	"github.com/antonovegorv/orders-service/router"
 	"github.com/gofiber/fiber/v2"
@@ -13,6 +14,13 @@ import (
 )
 
 func main() {
+	// Connect to the Database.
+	if err := database.Connect(); err != nil {
+		log.Fatalln(err)
+	} else {
+		log.Println("Connected to the Database!")
+	}
+
 	// Initialize the cache for the service to work.
 	cache.Init()
 
