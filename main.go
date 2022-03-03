@@ -61,6 +61,14 @@ func messageHandler(m *stan.Msg) {
 	}
 
 	// Write new value to the Database.
+	_, err := database.DB.Exec("INSERT INTO orders (data) VALUES($1)", order)
+	if err != nil {
+		// Log that we have an error in inserting data to the Database.
+		log.Println(err) // Probably should to be Fatalln...
+	} else {
+		// Log that we have inserted data to the Database.
+		log.Printf("New order (%v) has been inserted to the Database!\n", order.UUID)
+	}
 
 	// Set new value to cache.
 	if err := cache.Orders.Set(order.UUID.String(), order); err != nil {
