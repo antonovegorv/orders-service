@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"github.com/antonovegorv/orders-service/config"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -16,5 +17,5 @@ func main() {
 	})
 
 	// Start the HTTP server to listen for incoming requests.
-	log.Fatal(app.Listen(":3000"))
+	log.Fatal(app.Listen(config.Get("HTTP_PORT")))
 }
