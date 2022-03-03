@@ -2,6 +2,7 @@ package ordersRoutes
 
 import (
 	ordersHandler "github.com/antonovegorv/orders-service/internal/handlers/orders"
+	"github.com/antonovegorv/orders-service/middleware"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -11,5 +12,5 @@ func SetupOrderRoutes(router fiber.Router) {
 	orders := router.Group("/orders")
 
 	// Read an order by id.
-	orders.Get("/:orderId", ordersHandler.GetOrder)
+	orders.Get("/:orderId", middleware.VerifyCache, ordersHandler.GetOrder)
 }
