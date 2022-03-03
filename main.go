@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"os"
 
 	"github.com/antonovegorv/orders-service/cache"
 	"github.com/antonovegorv/orders-service/config"
@@ -13,25 +14,43 @@ import (
 	"github.com/nats-io/stan.go"
 )
 
+// Create 3-level logging system.
+var (
+	WarningLogger *log.Logger
+	InfoLogger    *log.Logger
+	ErrorLogger   *log.Logger
+)
+
+func init() {
+	file, err := os.OpenFile("logs.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	InfoLogger = log.New(file, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+	WarningLogger = log.New(file, "WARNING: ", log.Ldate|log.Ltime|log.Lshortfile)
+	ErrorLogger = log.New(file, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
+}
+
 func main() {
 	// Connect to the Database.
 	if err := database.Connect(); err != nil {
-		log.Fatalln(err)
+		ErrorLogger.Fatalln(err)
 	} else {
-		log.Println("Connected to the Database!")
+		InfoLogger.Println("Connected to the Database!")
 	}
 
 	// Initialize the cache for the service to work.
 	if err := cache.Init(); err != nil {
-		log.Fatalln(err)
+		ErrorLogger.Fatalln(err)
 	} else {
-		log.Println("Cache has been initialized!")
+		InfoLogger.Println("Cache has been initialized!")
 	}
 
 	// Connect to the nats-streaming-server.
 	sc, err := stan.Connect(config.Get("NATS_CLUSTER_ID"), config.Get("NATS_CLIENT_ID"))
 	if err != nil {
-		log.Fatalln(err)
+		InfoLogger.Fatalln(err)
 	}
 	defer sc.Close()
 
@@ -48,7 +67,7 @@ func main() {
 	router.SetupRoutes(app)
 
 	// Start the HTTP server to listen for incoming requests.
-	log.Fatal(app.Listen(config.Get("HTTP_PORT")))
+	ErrorLogger.Fatalln(app.Listen(config.Get("HTTP_PORT")))
 }
 
 // A handler for an incoming message from nats-streaming-server.
@@ -57,8 +76,14 @@ func messageHandler(m *stan.Msg) {
 	var order model.Order
 
 	// Try to unmarshal data received by the nats.
+	//
+	// So, this check will only protect us from some inappropriate information.
+	// However, we do not have protection on JSON of a different format.
+	// To do this, it is worth implementing either a check of all fields for
+	// compliance. Or initially specify field references in order to check the
+	// value for nil.
 	if err := json.Unmarshal(m.Data, &order); err != nil {
-		log.Println("Unpredicted data has been received. Skipped.")
+		WarningLogger.Println("Unpredicted data has been received. Skipped.")
 		return
 	}
 
@@ -66,18 +91,18 @@ func messageHandler(m *stan.Msg) {
 	_, err := database.DB.Exec("INSERT INTO orders (data) VALUES($1)", order)
 	if err != nil {
 		// Log that we have an error in inserting data to the Database.
-		log.Println(err) // Probably should to be Fatalln...
+		WarningLogger.Println(err) // Probably should to be Fatalln...
 	} else {
 		// Log that we have inserted data to the Database.
-		log.Printf("New order (%v) has been inserted to the Database!\n", order.UUID)
+		InfoLogger.Printf("New order (%v) has been inserted to the Database!\n", order.UUID)
 	}
 
 	// Set new value to cache.
 	if err := cache.Orders.Set(order.UUID.String(), order); err != nil {
 		// Log that we have an error in caching data.
-		log.Println(err) // Probably should to be Fatalln...
+		WarningLogger.Println(err) // Probably should to be Fatalln...
 	} else {
 		// Log that we have set new value to cache.
-		log.Printf("New order (%v) has been successfully cached!\n", order.UUID)
+		InfoLogger.Printf("New order (%v) has been successfully cached!\n", order.UUID)
 	}
 }
