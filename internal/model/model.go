@@ -4,7 +4,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -47,14 +46,14 @@ type Order struct {
 		Brand       string `json:"brand"`
 		Status      uint   `json:"status"`
 	} `json:"items"`
-	Locale            string    `json:"locale"`
-	InternalSignature string    `json:"internal_signature"`
-	CustomerId        string    `json:"customer_id"`
-	DeliveryService   string    `json:"delivery_service"`
-	Shardkey          string    `json:"shardkey"`
-	SmId              uint      `json:"sm_id"`
-	DateCreated       time.Time `json:"date_created"`
-	OofShard          string    `json:"oof_shard"`
+	Locale            string `json:"locale"`
+	InternalSignature string `json:"internal_signature"`
+	CustomerId        string `json:"customer_id"`
+	DeliveryService   string `json:"delivery_service"`
+	Shardkey          string `json:"shardkey"`
+	SmId              uint   `json:"sm_id"`
+	DateCreated       string `json:"date_created"`
+	OofShard          string `json:"oof_shard"`
 }
 
 // Make the Order struct implement the driver.Valuer interface. This method
