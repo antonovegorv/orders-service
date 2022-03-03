@@ -41,10 +41,8 @@ func main() {
 	// Create an instance of the fiber application.
 	app := fiber.New()
 
-	// Setup basic handler for a homepage route.
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("🦆 Quack-quack...")
-	})
+	// Setup serving static files.
+	app.Static("/", "./public")
 
 	// Setup routes for the entire app.
 	router.SetupRoutes(app)

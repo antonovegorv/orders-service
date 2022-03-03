@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+	<title>Orders Application</title>
+</head>
+<body>
+	<div class="container">
+		<div class="row">
+			<div class="col-12">
+				<h1 class="mt-5">Search for the Order by ID</h1>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col-12">
+				<form id="search-order">
+					<label for="inputOrderId" class="form-label">Order ID</label>
+					<input type="text" id="inputOrderId" class="form-control" aria-describedby="orderIdHelp">
+					<div id="orderIdHelp" class="form-text">
+						The format of the uid must be as follows: 3d15fc12-4a93-46b3-8dcb-07d6d686eb64 (example)
+					</div>
+					<button type="submit" class="mt-3 btn btn-primary">Submit</button>
+				</form>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col-12">
+				<div id="jsonViewer" class="mt-3"></div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		const form = document.getElementById("search-order");
+
+		form.addEventListener("submit", (e) => {
+			e.preventDefault();
+
+			document.getElementById("jsonViewer").innerHTML = "";
+			
+			let orderId = document.getElementById("inputOrderId").value;
+			let url = '/api/orders/' + orderId;
+
+			const Http = new XMLHttpRequest();
+			Http.open("GET", url);
+			Http.send();
+			
+			// Attention! The author of the code is not responsible for the code below. 
+			// He himself does not understand what is happening here. 
+			// Okay, it's actually not that complicated, but it's very painful to watch. 
+			// I'm not going to pay you sick leave. Thanks for attention!
+			Http.onreadystatechange = function() {
+				if (this.readyState == 4 && this.status == 200) {
+					let response = JSON.parse(Http.responseText);
+
+						let text = "<table class=\"table\">";
+						
+						for (let key in response.data) {
+							if (key == "delivery" || key == "payment") {
+								text += `<tr><td colspan="2">${key}</td><tr><tr><td></td><td><table>`;
+								for (let k in response.data[key]) {
+									text += `<tr><td>${k}<td><td>${response.data[key][k]}</td></tr>`;
+								}
+								text += `</table>`
+							} else if (key == "items") {
+								for (let i in response.data[key]) {
+									text += `<tr><td colspan="2">${key}</td><tr><tr><td></td><td><table>`;
+									for (let k in response.data[key][i]) {
+										text += `<tr><td>${k}<td><td>${response.data[key][i][k]}</td></tr>`;
+									}
+									text += `</table>`
+								}
+							} else {
+								text += `<tr><td>${key}</td><td>${response.data[key]}</td><tr>`;
+							}
+							console.log(key, response.data[key]);
+						}
+						text += "</table>"
+					document.getElementById("jsonViewer").innerHTML = text;
+				} else if (this.status == 404) {
+					document.getElementById("jsonViewer").innerHTML = "<h2>Sorry, could not find any orders with such id 😢</h2>";
+				}
+			}
+		})
+	</script>
+</body>
+</html>
