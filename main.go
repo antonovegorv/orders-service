@@ -22,7 +22,11 @@ func main() {
 	}
 
 	// Initialize the cache for the service to work.
-	cache.Init()
+	if err := cache.Init(); err != nil {
+		log.Fatalln(err)
+	} else {
+		log.Println("Cache has been initialized!")
+	}
 
 	// Connect to the nats-streaming-server.
 	sc, err := stan.Connect(config.Get("NATS_CLUSTER_ID"), config.Get("NATS_CLIENT_ID"))
