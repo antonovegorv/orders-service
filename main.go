@@ -14,7 +14,8 @@ import (
 	"github.com/nats-io/stan.go"
 )
 
-// Create 3-level logging system.
+// Create 3-level logging system. Not going to put it in a separate package
+// due to project scale.
 var (
 	WarningLogger *log.Logger
 	InfoLogger    *log.Logger
